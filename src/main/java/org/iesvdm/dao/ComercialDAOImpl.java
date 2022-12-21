@@ -1,12 +1,16 @@
 package org.iesvdm.dao;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.logging.Log;
 import org.iesvdm.modelo.Cliente;
 import org.iesvdm.modelo.Comercial;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import lombok.AllArgsConstructor;
@@ -21,12 +25,33 @@ public class ComercialDAOImpl implements ComercialDAO {
 
 	//JdbcTemplate se inyecta por el constructor de la clase automáticamente
 	//
+	@Autowired //No sé si es necesario???????????
 	private JdbcTemplate jdbcTemplate;
 	
 	@Override
-	public void create(Comercial cliente) {
+	public void create(Comercial comercial) {
 		// TODO Auto-generated method stub
-
+		String sqlInsert = """
+				INSERT INTO comercial (id, nombre, apellido1, apellido2, comision) 
+				VALUES  (     ?,         ?,         ?,       ?,		?)
+			   """;
+		
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		
+		int rows = jdbcTemplate.update(connection -> {
+			PreparedStatement ps = connection.prepareStatement(sqlInsert, new String[] { "id" });
+			int idx = 1;
+			ps.setInt(idx++, comercial.getId());
+			ps.setString(idx++, comercial.getNombre());
+			ps.setString(idx++, comercial.getApellido1());
+			ps.setString(idx++, comercial.getApellido2());
+			ps.setDouble(idx, comercial.getComision());
+			return ps;
+		},keyHolder);
+		
+		comercial.setId(keyHolder.getKey().intValue());
+		
+		log.info("Insertados {} registros.", rows);
 	}
 
 	@Override
@@ -38,7 +63,7 @@ public class ComercialDAOImpl implements ComercialDAO {
                 							  rs.getString("nombre"), 
                 							  rs.getString("apellido1"),
                 							  rs.getString("apellido2"), 
-                							  rs.getFloat("comisión"))
+                							  rs.getDouble("comision"))
                 						 	
         );
 		
@@ -50,19 +75,55 @@ public class ComercialDAOImpl implements ComercialDAO {
 	@Override
 	public Optional<Comercial> find(int id) {
 		// TODO Auto-generated method stub
-		return Optional.empty();
+		Comercial comercial = jdbcTemplate.queryForObject("SELECT * FROM comercial WHERE id = ?",
+				(rs, rowNum) -> new Comercial(rs.getInt("id"),
+											rs.getString("nombre"),
+											rs.getString("apellido1"),
+											rs.getString("apellido2"),
+											rs.getDouble("comision"))
+								,id);
+		
+		if( comercial !=  null) {
+			return Optional.of(comercial);
+		}else {
+			log.info("Comercial no encontrado.");
+			return Optional.empty();
+		}
+													
 	}
 
 	@Override
-	public void update(Comercial cliente) {
+	public void update(Comercial comercial) {
 		// TODO Auto-generated method stub
+		int rows = jdbcTemplate.update("""
+				UPDATE comercial SET 
+								nombre = ?, 
+								apellido1 = ?, 
+								apellido2 = ?,
+								comision = ?
+								 
+						WHERE id = ?
+				""", comercial.getNombre()
+				, comercial.getApellido1()
+				, comercial.getApellido2()
+				, comercial.getComision()
+				, comercial.getId());
 
-	}
+log.info("Update de Comercial con {} registros actualizados.", rows);
+
+}
+
 
 	@Override
 	public void delete(long id) {
 		// TODO Auto-generated method stub
+		
+		int rows = jdbcTemplate.update("DELETE FROM comercial WHERE id = ?", id);
+		
+		log.info("Delete de Comercial con {} registros eliminados.", rows);		
+		
+	}
 
 	}
 
-}
+

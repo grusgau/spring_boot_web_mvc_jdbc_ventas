@@ -23,7 +23,7 @@ public class ClienteDAOImpl implements ClienteDAO {
 	 //Plantilla jdbc inyectada automáticamente por el framework Spring, gracias a la anotación @Autowired.
 	 @Autowired
 	 private JdbcTemplate jdbcTemplate;
-	
+	 
 	/**
 	 * Inserta en base de datos el nuevo Cliente, actualizando el id en el bean Cliente.
 	 */
@@ -66,7 +66,7 @@ public class ClienteDAOImpl implements ClienteDAO {
 	/**
 	 * Devuelve lista con todos loa Clientes.
 	 */
-	@Override
+	@Override 
 	public List<Cliente> getAll() {
 		
 		List<Cliente> listFab = jdbcTemplate.query(
